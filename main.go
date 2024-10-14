@@ -13,7 +13,7 @@ const (
 
 func main() {
 	ebiten.SetWindowSize(640, 480)
-	ebiten.SetWindowTitle("Pacman")
+	ebiten.SetWindowTitle("Pacman: 640x480")
 
 	g := NewGame(screenWidth, screenHeight)
 	if err := ebiten.RunGame(g); err != nil {

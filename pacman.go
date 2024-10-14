@@ -67,6 +67,10 @@ func (p *Pacman) Pos() []int {
 	return []int{p.x, p.y}
 }
 
+func (p *Pacman) Put(x, y int) {
+	p.x, p.y = x, y
+}
+
 func (p *Pacman) Draw(screen *ebiten.Image) {
 	p.op.GeoM.Reset()
 
@@ -77,7 +81,7 @@ func (p *Pacman) Draw(screen *ebiten.Image) {
 		p.rotateInPlace(&p.op.GeoM, 180)
 	case DOWN:
 		p.rotateInPlace(&p.op.GeoM, 90)
-	case RIGHT:
+	default:
 		p.rotateInPlace(&p.op.GeoM, 0)
 	}
 	p.op.GeoM.Translate(float64(p.x), float64(p.y))
