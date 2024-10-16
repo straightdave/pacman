@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -13,62 +14,126 @@ const (
 	RIGHT
 )
 
+const V = 2
+
 type Pacman struct {
-	i      *ebiten.Image
-	op     *ebiten.DrawImageOptions
-	w, h   int
-	x, y   int
-	vx, vy int
-	dir    int
+	i    *ebiten.Image
+	op   *ebiten.DrawImageOptions
+	w, h int
+
+	// current pos
+	x, y int
+
+	// moving state
+	dir           int
+	startX, stopX int
+	startY, stopY int
 }
 
 func NewPacman(x, y int) *Pacman {
 	cImage := readImage("example.png")
-	w, h := cImage.Bounds().Dx(), cImage.Bounds().Dy()
 
 	return &Pacman{
 		i:  ebiten.NewImageFromImage(cImage),
 		op: &ebiten.DrawImageOptions{},
-		w:  w,
-		h:  h,
+		w:  cImage.Bounds().Dx(),
+		h:  cImage.Bounds().Dy(),
 
-		// speed
-		vx: 1,
-		vy: 1,
+		x: x,
+		y: y,
 
-		// initial position and direction
-		x:   x,
-		y:   y,
-		dir: RIGHT,
+		dir:    0,
+		startX: x,
+		stopX:  x,
+		startY: y,
+		stopY:  y,
 	}
 }
 
-func (p *Pacman) moveLeft() {
-	p.x -= p.vx
-	p.dir = LEFT
+func (p *Pacman) Debug() string {
+	return fmt.Sprintf(
+		"pos=%v, is_moving=%t, stop=%v",
+		p.Pos(),
+		p.isMoving(),
+		[]int{p.stopX, p.stopY},
+	)
 }
 
-func (p *Pacman) moveUp() {
-	p.y -= p.vy
-	p.dir = UP
+func (p *Pacman) Update() {
+	if p.isMoving() {
+		p.move()
+		return
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+		p.startMoving(LEFT)
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
+		p.startMoving(UP)
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+		p.startMoving(RIGHT)
+	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
+		p.startMoving(DOWN)
+	}
 }
 
-func (p *Pacman) moveRight() {
-	p.x += p.vy
-	p.dir = RIGHT
+func (p *Pacman) startMoving(dir int) {
+	p.dir = dir
+	switch dir {
+	case UP:
+		p.stopX, p.stopY = p.x, p.y-32
+	case RIGHT:
+		p.stopX, p.stopY = p.x+32, p.y
+	case DOWN:
+		p.stopX, p.stopY = p.x, p.y+32
+	default:
+		p.stopX, p.stopY = p.x-32, p.y
+	}
 }
 
-func (p *Pacman) moveDown() {
-	p.y += p.vy
-	p.dir = DOWN
+func (p *Pacman) move() {
+	switch p.dir {
+	case UP:
+		if p.y < p.stopY {
+			p.y = p.stopY
+		} else {
+			p.y -= V
+		}
+
+	case RIGHT:
+		if p.x > p.stopX {
+			p.x = p.stopX
+		} else {
+			p.x += V
+		}
+
+	case DOWN:
+		if p.y > p.stopY {
+			p.y = p.stopY
+		} else {
+			p.y += V
+		}
+
+	default:
+		if p.x < p.stopX {
+			p.x = p.stopX
+		} else {
+			p.x -= V
+		}
+	}
 }
 
 func (p *Pacman) Pos() []int {
 	return []int{p.x, p.y}
 }
 
-func (p *Pacman) Put(x, y int) {
-	p.x, p.y = x, y
+func (p *Pacman) isMoving() bool {
+	return p.x != p.stopX || p.y != p.stopY
 }
 
 func (p *Pacman) Draw(screen *ebiten.Image) {

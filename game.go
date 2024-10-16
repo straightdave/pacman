@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -26,43 +25,27 @@ func NewGame(screenWidth, screenHeight int) *Game {
 		inited: false,
 		layers: levelMap1,
 		rect:   ebiten.NewImage(32, 32),
-
-		pacman: NewPacman(screenWidth/2, screenHeight/2),
 	}
 	g.rect.Fill(color.RGBA{0, 0, 255, 1})
 	return g
 }
 
 func (g *Game) Update() error {
-	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		g.pacman.moveLeft()
+	if !g.inited {
+		return nil
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
-		g.pacman.moveUp()
-	}
-
-	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		g.pacman.moveRight()
-	}
-
-	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
-		g.pacman.moveDown()
-	}
+	g.pacman.Update()
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.drawLevel(screen)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("pos=%v", g.pacman.Pos()))
+	g.draw(screen)
+	ebitenutil.DebugPrint(screen, g.pacman.Debug())
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return g.sWidth, g.sHeight
-}
-
-func (g *Game) drawLevel(screen *ebiten.Image) {
+func (g *Game) draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	for i, r := range g.layers {
 		for j, v := range r {
@@ -74,10 +57,14 @@ func (g *Game) drawLevel(screen *ebiten.Image) {
 			}
 
 			if v == 2 && !g.inited {
-				g.pacman.Put(i*32, j*32)
+				g.pacman = NewPacman(i*32, j*32)
 				g.inited = true
 			}
 		}
 	}
 	g.pacman.Draw(screen)
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return g.sWidth, g.sHeight
 }
