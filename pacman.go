@@ -28,9 +28,10 @@ type Pacman struct {
 	x, y int
 
 	// moving state
-	dir           int
-	startX, stopX int
-	startY, stopY int
+	moving         bool
+	dir            int
+	stopX, stopY   int
+	stopLX, stopLY int
 }
 
 func NewPacman(logicalX, logicalY int) *Pacman {
@@ -50,26 +51,28 @@ func NewPacman(logicalX, logicalY int) *Pacman {
 		x: x,
 		y: y,
 
+		moving: false,
 		dir:    LEFT,
-		startX: x,
 		stopX:  x,
-		startY: y,
 		stopY:  y,
+		stopLX: logicalX,
+		stopLY: logicalY,
 	}
 }
 
 func (p *Pacman) Debug() string {
 	return fmt.Sprintf(
-		"pos=%v, is_moving=%t, stop=%v \n lpos=%v",
+		"pos=%v, is_moving=%t, stop=%v \n lpos=%v lstop=%v",
 		p.Pos(),
-		p.isMoving(),
+		p.moving,
 		[]int{p.stopX, p.stopY},
 		[]int{p.lx, p.ly},
+		[]int{p.stopLX, p.stopLY},
 	)
 }
 
 func (p *Pacman) Update(wallTest func(int, int) bool) {
-	if p.isMoving() {
+	if p.moving {
 		p.move()
 		return
 	}
@@ -78,7 +81,6 @@ func (p *Pacman) Update(wallTest func(int, int) bool) {
 		p.dir = LEFT
 		if !wallTest(p.lx-1, p.ly) {
 			p.startMoving(LEFT)
-			p.lx -= 1
 		}
 	}
 
@@ -86,7 +88,6 @@ func (p *Pacman) Update(wallTest func(int, int) bool) {
 		p.dir = UP
 		if !wallTest(p.lx, p.ly-1) {
 			p.startMoving(UP)
-			p.ly -= 1
 		}
 	}
 
@@ -94,7 +95,6 @@ func (p *Pacman) Update(wallTest func(int, int) bool) {
 		p.dir = RIGHT
 		if !wallTest(p.lx+1, p.ly) {
 			p.startMoving(RIGHT)
-			p.lx += 1
 		}
 	}
 
@@ -102,52 +102,69 @@ func (p *Pacman) Update(wallTest func(int, int) bool) {
 		p.dir = DOWN
 		if !wallTest(p.lx, p.ly+1) {
 			p.startMoving(DOWN)
-			p.ly += 1
 		}
 	}
 }
 
 func (p *Pacman) startMoving(dir int) {
+	if p.moving {
+		return
+	}
+
+	p.moving = true
+
 	switch dir {
 	case UP:
-		p.stopX, p.stopY = p.x, p.y-32
+		p.stopY = p.y - 32
+		p.stopLY = p.ly - 1
 	case RIGHT:
-		p.stopX, p.stopY = p.x+32, p.y
+		p.stopX = p.x + 32
+		p.stopLX = p.lx + 1
 	case DOWN:
-		p.stopX, p.stopY = p.x, p.y+32
+		p.stopY = p.y + 32
+		p.stopLY = p.ly + 1
 	default:
-		p.stopX, p.stopY = p.x-32, p.y
+		p.stopX = p.x - 32
+		p.stopLX = p.lx - 1
 	}
 }
 
 func (p *Pacman) move() {
+	if !p.moving {
+		return
+	}
+
 	switch p.dir {
 	case UP:
-		if p.y < p.stopY {
+		p.y -= V
+		if p.y <= p.stopY {
 			p.y = p.stopY
-		} else {
-			p.y -= V
+			p.ly = p.stopLY
+			p.moving = false
 		}
 
 	case RIGHT:
-		if p.x > p.stopX {
+		p.x += V
+		if p.x >= p.stopX {
 			p.x = p.stopX
-		} else {
-			p.x += V
+			p.lx = p.stopLX
+			p.moving = false
 		}
 
 	case DOWN:
-		if p.y > p.stopY {
+		p.y += V
+		if p.y >= p.stopY {
 			p.y = p.stopY
-		} else {
-			p.y += V
+			p.ly = p.stopLY
+			p.moving = false
 		}
 
 	default:
-		if p.x < p.stopX {
+		p.x -= V
+		if p.x <= p.stopX {
 			p.x = p.stopX
-		} else {
-			p.x -= V
+			p.lx = p.stopLX
+			p.moving = false
 		}
 	}
 }
@@ -156,8 +173,8 @@ func (p *Pacman) Pos() []int {
 	return []int{p.x, p.y}
 }
 
-func (p *Pacman) isMoving() bool {
-	return p.x != p.stopX || p.y != p.stopY
+func (p *Pacman) LogicalPos() (int, int) {
+	return p.lx, p.ly
 }
 
 func (p *Pacman) Draw(screen *ebiten.Image) {

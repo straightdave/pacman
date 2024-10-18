@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -13,6 +14,8 @@ type Game struct {
 	inited bool
 	layers [][]int
 	rect   *ebiten.Image
+	dot    *ebiten.Image
+	score  int
 
 	pacman *Pacman
 }
@@ -30,8 +33,10 @@ func NewGame() *Game {
 		inited: false,
 		layers: levelMap1,
 		rect:   ebiten.NewImage(32, 32),
+		dot:    ebiten.NewImage(32, 32),
 	}
 	g.rect.Fill(color.RGBA{0, 0, 255, 1})
+	g.dot.Fill(color.RGBA{255, 255, 255, 1})
 	return g
 }
 
@@ -41,6 +46,13 @@ func (g *Game) Update() error {
 	}
 
 	g.pacman.Update(g.wallTest)
+
+	lx, ly := g.pacman.LogicalPos()
+	if g.layers[lx][ly] == 3 {
+		g.layers[lx][ly] = 0
+		g.score++
+	}
+
 	return nil
 }
 
@@ -50,7 +62,8 @@ func (g *Game) wallTest(lx, ly int) bool {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.draw(screen)
-	ebitenutil.DebugPrint(screen, g.pacman.Debug())
+	debugMsg := fmt.Sprintf("score=%d %v", g.score, g.pacman.Debug())
+	ebitenutil.DebugPrint(screen, debugMsg)
 }
 
 func (g *Game) draw(screen *ebiten.Image) {
@@ -67,6 +80,10 @@ func (g *Game) draw(screen *ebiten.Image) {
 			if v == 2 && !g.inited {
 				g.pacman = NewPacman(i, j)
 				g.inited = true
+			}
+
+			if v == 3 {
+				screen.DrawImage(g.dot, op)
 			}
 		}
 	}
