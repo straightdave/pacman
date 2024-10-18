@@ -17,9 +17,16 @@ var (
 )
 
 func convertToMatrix(n int, raw []int) [][]int {
+	// loading to 2D matrix + pivoting
+
 	var res [][]int
 	for i := range n {
-		res = append(res, raw[i*n:(i+1)*n])
+		var t []int
+		for j := range n {
+			n := j*10 + i
+			t = append(t, raw[n])
+		}
+		res = append(res, t)
 	}
 	return res
 }

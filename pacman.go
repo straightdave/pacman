@@ -52,7 +52,7 @@ func NewPacman(logicalX, logicalY int) *Pacman {
 		y: y,
 
 		moving: false,
-		dir:    LEFT,
+		dir:    RIGHT,
 		stopX:  x,
 		stopY:  y,
 		stopLX: logicalX,
