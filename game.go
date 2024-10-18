@@ -17,7 +17,12 @@ type Game struct {
 	pacman *Pacman
 }
 
-func NewGame(screenWidth, screenHeight int) *Game {
+const (
+	screenWidth  = 320
+	screenHeight = 320
+)
+
+func NewGame() *Game {
 	g := &Game{
 		sWidth:  screenWidth,
 		sHeight: screenHeight,
@@ -35,9 +40,12 @@ func (g *Game) Update() error {
 		return nil
 	}
 
-	g.pacman.Update()
-
+	g.pacman.Update(g.wallTest)
 	return nil
+}
+
+func (g *Game) wallTest(lx, ly int) bool {
+	return g.layers[lx][ly] == 1
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -57,7 +65,7 @@ func (g *Game) draw(screen *ebiten.Image) {
 			}
 
 			if v == 2 && !g.inited {
-				g.pacman = NewPacman(i*32, j*32)
+				g.pacman = NewPacman(i, j)
 				g.inited = true
 			}
 		}

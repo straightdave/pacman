@@ -21,6 +21,9 @@ type Pacman struct {
 	op   *ebiten.DrawImageOptions
 	w, h int
 
+	// logical pos
+	lx, ly int
+
 	// current pos
 	x, y int
 
@@ -30,19 +33,24 @@ type Pacman struct {
 	startY, stopY int
 }
 
-func NewPacman(x, y int) *Pacman {
+func NewPacman(logicalX, logicalY int) *Pacman {
 	cImage := readImage("example.png")
+	w, h := cImage.Bounds().Dx(), cImage.Bounds().Dy()
+	x, y := logicalX*32, logicalY*32
 
 	return &Pacman{
 		i:  ebiten.NewImageFromImage(cImage),
 		op: &ebiten.DrawImageOptions{},
-		w:  cImage.Bounds().Dx(),
-		h:  cImage.Bounds().Dy(),
+		w:  w,
+		h:  h,
+
+		lx: logicalX,
+		ly: logicalY,
 
 		x: x,
 		y: y,
 
-		dir:    0,
+		dir:    LEFT,
 		startX: x,
 		stopX:  x,
 		startY: y,
@@ -52,38 +60,54 @@ func NewPacman(x, y int) *Pacman {
 
 func (p *Pacman) Debug() string {
 	return fmt.Sprintf(
-		"pos=%v, is_moving=%t, stop=%v",
+		"pos=%v, is_moving=%t, stop=%v \n lpos=%v",
 		p.Pos(),
 		p.isMoving(),
 		[]int{p.stopX, p.stopY},
+		[]int{p.lx, p.ly},
 	)
 }
 
-func (p *Pacman) Update() {
+func (p *Pacman) Update(wallTest func(int, int) bool) {
 	if p.isMoving() {
 		p.move()
 		return
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		p.startMoving(LEFT)
+		p.dir = LEFT
+		if !wallTest(p.lx-1, p.ly) {
+			p.startMoving(LEFT)
+			p.lx -= 1
+		}
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
-		p.startMoving(UP)
+		p.dir = UP
+		if !wallTest(p.lx, p.ly-1) {
+			p.startMoving(UP)
+			p.ly -= 1
+		}
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		p.startMoving(RIGHT)
+		p.dir = RIGHT
+		if !wallTest(p.lx+1, p.ly) {
+			p.startMoving(RIGHT)
+			p.lx += 1
+		}
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
-		p.startMoving(DOWN)
+		p.dir = DOWN
+		if !wallTest(p.lx, p.ly+1) {
+			p.startMoving(DOWN)
+			p.ly += 1
+		}
 	}
 }
 
 func (p *Pacman) startMoving(dir int) {
-	p.dir = dir
 	switch dir {
 	case UP:
 		p.stopX, p.stopY = p.x, p.y-32

@@ -6,16 +6,11 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-const (
-	screenWidth  = 320
-	screenHeight = 240
-)
-
 func main() {
-	ebiten.SetWindowSize(640, 480)
-	ebiten.SetWindowTitle("Pacman: 640x480")
+	ebiten.SetWindowSize(640, 640)
+	ebiten.SetWindowTitle("Pacman: 640x640")
 
-	g := NewGame(screenWidth, screenHeight)
+	g := NewGame()
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
