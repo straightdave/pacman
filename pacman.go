@@ -35,7 +35,7 @@ type Pacman struct {
 }
 
 func NewPacman(logicalX, logicalY int) *Pacman {
-	cImage := readImage("example.png")
+	cImage := readImage("pacman_32x32.png")
 	w, h := cImage.Bounds().Dx(), cImage.Bounds().Dy()
 	x, y := logicalX*32, logicalY*32
 
