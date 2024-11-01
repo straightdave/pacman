@@ -43,7 +43,7 @@ type Pacman struct {
 }
 
 func NewPacman(logicalX, logicalY int) *Pacman {
-	cImage := readImage("pacman_spirit.png")
+	cImage := readImage("pacman.png")
 	x, y := logicalX*CWidth, logicalY*CHeight
 
 	return &Pacman{
