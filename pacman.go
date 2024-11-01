@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"image"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -14,12 +15,19 @@ const (
 	RIGHT
 )
 
-const V = 2
+const (
+	V       = 2
+	CWidth  = 32
+	CHeight = 32
+)
 
 type Pacman struct {
-	i    *ebiten.Image
-	op   *ebiten.DrawImageOptions
-	w, h int
+	i  *ebiten.Image
+	op *ebiten.DrawImageOptions
+
+	// animation
+	animeTick  int
+	animeState int
 
 	// logical pos
 	lx, ly int
@@ -35,15 +43,15 @@ type Pacman struct {
 }
 
 func NewPacman(logicalX, logicalY int) *Pacman {
-	cImage := readImage("pacman_32x32.png")
-	w, h := cImage.Bounds().Dx(), cImage.Bounds().Dy()
-	x, y := logicalX*32, logicalY*32
+	cImage := readImage("pacman_spirit.png")
+	x, y := logicalX*CWidth, logicalY*CHeight
 
 	return &Pacman{
 		i:  ebiten.NewImageFromImage(cImage),
 		op: &ebiten.DrawImageOptions{},
-		w:  w,
-		h:  h,
+
+		animeTick:  0,
+		animeState: 0,
 
 		lx: logicalX,
 		ly: logicalY,
@@ -72,10 +80,19 @@ func (p *Pacman) Debug() string {
 }
 
 func (p *Pacman) Update(wallTest func(int, int) bool) {
+	// if p.animeState == 1 {
+	// 	p.animeTick++
+	// } else {
+	// 	p.animeTick = 0
+	// }
+
 	if p.moving {
+		p.animeTick++
 		p.move()
 		return
 	}
+
+	p.animeTick = 0
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
 		p.dir = LEFT
@@ -191,12 +208,18 @@ func (p *Pacman) Draw(screen *ebiten.Image) {
 		p.rotateInPlace(&p.op.GeoM, 0)
 	}
 	p.op.GeoM.Translate(float64(p.x), float64(p.y))
-	screen.DrawImage(p.i, p.op)
+
+	i := (p.animeTick / 5) % 2
+	sx, sy := 0, i*CHeight
+	screen.DrawImage(
+		p.i.SubImage(image.Rect(sx, sy, sx+CWidth, sy+CHeight)).(*ebiten.Image),
+		p.op,
+	)
 }
 
 func (p *Pacman) rotateInPlace(geoM *ebiten.GeoM, degree int) *ebiten.GeoM {
-	geoM.Translate(-float64(p.w)/2, -float64(p.h)/2)
+	geoM.Translate(-float64(CWidth)/2, -float64(CHeight)/2)
 	geoM.Rotate(2 * math.Pi * float64(degree) / 360)
-	geoM.Translate(float64(p.w)/2, float64(p.h)/2)
+	geoM.Translate(float64(CWidth)/2, float64(CHeight)/2)
 	return geoM
 }
