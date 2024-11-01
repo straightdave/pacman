@@ -8,20 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-const (
-	UP = iota
-	DOWN
-	LEFT
-	RIGHT
-)
-
-const (
-	V       = 2
-	CWidth  = 32
-	CHeight = 32
-)
-
-type Pacman struct {
+type Ghost struct {
 	i  *ebiten.Image
 	op *ebiten.DrawImageOptions
 
@@ -42,11 +29,11 @@ type Pacman struct {
 	stopLX, stopLY int
 }
 
-func NewPacman(logicalX, logicalY int) *Pacman {
-	cImage := readImage("pacman.png")
+func NewGhost(logicalX, logicalY int) *Ghost {
+	cImage := readImage("ghost.png")
 	x, y := logicalX*CWidth, logicalY*CHeight
 
-	return &Pacman{
+	return &Ghost{
 		i:  ebiten.NewImageFromImage(cImage),
 		op: &ebiten.DrawImageOptions{},
 
@@ -68,7 +55,7 @@ func NewPacman(logicalX, logicalY int) *Pacman {
 	}
 }
 
-func (p *Pacman) Debug() string {
+func (p *Ghost) Debug() string {
 	return fmt.Sprintf(
 		"pos=%v, is_moving=%t, stop=%v \n lpos=%v lstop=%v",
 		p.Pos(),
@@ -79,7 +66,7 @@ func (p *Pacman) Debug() string {
 	)
 }
 
-func (p *Pacman) Update(wallTest func(int, int) bool) {
+func (p *Ghost) Update(wallTest func(int, int) bool) {
 	if p.moving {
 		p.animeTick++
 		p.move()
@@ -117,7 +104,7 @@ func (p *Pacman) Update(wallTest func(int, int) bool) {
 	}
 }
 
-func (p *Pacman) startMoving(dir int) {
+func (p *Ghost) startMoving(dir int) {
 	if p.moving {
 		return
 	}
@@ -140,7 +127,7 @@ func (p *Pacman) startMoving(dir int) {
 	}
 }
 
-func (p *Pacman) move() {
+func (p *Ghost) move() {
 	if !p.moving {
 		return
 	}
@@ -180,15 +167,15 @@ func (p *Pacman) move() {
 	}
 }
 
-func (p *Pacman) Pos() []int {
+func (p *Ghost) Pos() []int {
 	return []int{p.x, p.y}
 }
 
-func (p *Pacman) LogicalPos() (int, int) {
+func (p *Ghost) LogicalPos() (int, int) {
 	return p.lx, p.ly
 }
 
-func (p *Pacman) Draw(screen *ebiten.Image) {
+func (p *Ghost) Draw(screen *ebiten.Image) {
 	p.op.GeoM.Reset()
 
 	switch p.dir {
@@ -203,8 +190,7 @@ func (p *Pacman) Draw(screen *ebiten.Image) {
 	}
 	p.op.GeoM.Translate(float64(p.x), float64(p.y))
 
-	// i := (p.animeTick / 5) % 1
-	i := 0
+	i := (p.animeTick / 5) % 2
 	sx, sy := 0, i*CHeight
 	screen.DrawImage(
 		p.i.SubImage(image.Rect(sx, sy, sx+CWidth, sy+CHeight)).(*ebiten.Image),
@@ -212,7 +198,7 @@ func (p *Pacman) Draw(screen *ebiten.Image) {
 	)
 }
 
-func (p *Pacman) rotateInPlace(geoM *ebiten.GeoM, degree int) *ebiten.GeoM {
+func (p *Ghost) rotateInPlace(geoM *ebiten.GeoM, degree int) *ebiten.GeoM {
 	geoM.Translate(-float64(CWidth)/2, -float64(CHeight)/2)
 	geoM.Rotate(2 * math.Pi * float64(degree) / 360)
 	geoM.Translate(float64(CWidth)/2, float64(CHeight)/2)

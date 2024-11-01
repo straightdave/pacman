@@ -12,9 +12,9 @@ type Game struct {
 	scenes    map[string]Scene
 }
 
-func NewGame(initSceneName string) *Game {
+func NewGame() *Game {
 	return &Game{
-		ctx:    &Context{NextScene: initSceneName},
+		ctx:    &Context{NextScene: "intro"},
 		scenes: make(map[string]Scene),
 	}
 }

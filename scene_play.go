@@ -87,5 +87,5 @@ func (s *ScenePlay) Draw(_ *Context, screen *ebiten.Image) {
 		s.pacman.Draw(screen)
 	}
 
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("score: %d", s.score))
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("Score: %d", s.score))
 }
