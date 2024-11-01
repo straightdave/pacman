@@ -9,6 +9,8 @@ import (
 )
 
 type ScenePlay struct {
+	isActive bool
+
 	layers [][]int
 	rect   *ebiten.Image
 	dot    *ebiten.Image
@@ -22,24 +24,26 @@ func NewScenePlay() *ScenePlay {
 	levelMap1[lx][ly] = 2
 
 	s := &ScenePlay{
-		layers: levelMap1,
-		rect:   ebiten.NewImage(32, 32),
-		dot:    ebiten.NewImage(32, 32),
-		score:  0,
-		pacman: NewPacman(lx, ly),
+		isActive: true,
+		layers:   levelMap1,
+		rect:     ebiten.NewImage(32, 32),
+		dot:      ebiten.NewImage(32, 32),
+		score:    0,
+		pacman:   NewPacman(lx, ly),
 	}
 	s.rect.Fill(color.RGBA{0, 0, 255, 1})
 	s.dot.Fill(color.RGBA{255, 255, 255, 1})
 	return s
 }
 
-func (s *ScenePlay) Name() string {
-	return "play"
-}
+func (s *ScenePlay) IsActive() bool { return s.isActive }
+func (s *ScenePlay) Activate()      { s.isActive = true }
+func (s *ScenePlay) Deactivate()    { s.isActive = false }
 
 func (s *ScenePlay) Update(ctx *Context) error {
 	if s.score >= 5 {
 		ctx.NextScene = "win"
+		s.Deactivate()
 		return nil
 	}
 

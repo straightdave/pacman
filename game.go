@@ -1,56 +1,77 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-const (
-	screenWidth  = 320
-	screenHeight = 320
-)
-
 type Game struct {
-	ctx   *Context
-	scene Scene
+	ctx       *Context
+	currScene Scene
+	scenes    map[string]Scene
 }
 
-func NewGame() *Game {
+func NewGame(initSceneName string) *Game {
 	return &Game{
-		ctx: &Context{
-			NextScene: "intro",
-		},
+		ctx:    &Context{NextScene: initSceneName},
+		scenes: make(map[string]Scene),
 	}
 }
 
 func (g *Game) Update() error {
-	if g.scene != nil {
-		if err := g.scene.Update(g.ctx); err != nil {
+	g.changeScene()
+
+	for _, s := range g.scenes {
+		if !s.IsActive() {
+			continue
+		}
+
+		if err := s.Update(g.ctx); err != nil {
 			return err
 		}
-	}
-
-	switch g.ctx.NextScene {
-	case "intro":
-		g.scene = NewSceneIntro()
-		g.ctx.NextScene = ""
-	case "play":
-		g.scene = NewScenePlay()
-		g.ctx.NextScene = ""
-	case "win":
-		g.scene = NewSceneWin()
-		g.ctx.NextScene = ""
 	}
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	if g.scene == nil {
-		return
+	if g.currScene != nil {
+		g.currScene.Draw(g.ctx, screen)
 	}
-	g.scene.Draw(g.ctx, screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
+	return 320, 320
+}
+
+func (g *Game) changeScene() {
+	if s, ok := g.scenes[g.ctx.NextScene]; ok {
+		g.currScene = s
+		return
+	}
+
+	if !g.loadScene(g.ctx.NextScene) {
+		g.setErrorPage(fmt.Sprintf("No scene with name %s.", g.ctx.NextScene))
+	}
+}
+
+func (g *Game) loadScene(name string) bool {
+	if _, ok := g.scenes[name]; ok {
+		return true
+	}
+
+	if s := NewScene(name); s != nil {
+		g.scenes[name] = s
+		return true
+	}
+
+	return false
+}
+
+func (g *Game) setErrorPage(message string) {
+	g.ctx = &Context{
+		NextScene: "error",
+		Message:   message,
+	}
 }

@@ -5,19 +5,24 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-type SceneIntro struct{}
+type SceneIntro struct {
+	isActive bool
+}
 
 func NewSceneIntro() *SceneIntro {
-	return &SceneIntro{}
+	return &SceneIntro{
+		isActive: true,
+	}
 }
 
-func (s *SceneIntro) Name() string {
-	return "intro"
-}
+func (s *SceneIntro) IsActive() bool { return s.isActive }
+func (s *SceneIntro) Activate()      { s.isActive = true }
+func (s *SceneIntro) Deactivate()    { s.isActive = false }
 
 func (s *SceneIntro) Update(ctx *Context) error {
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
 		ctx.NextScene = "play"
+		s.Deactivate()
 	}
 	return nil
 }
