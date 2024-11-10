@@ -1,20 +1,27 @@
-package main
+package game
 
 import (
-	"fmt"
 	"image"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type Ghost struct {
-	i  *ebiten.Image
-	op *ebiten.DrawImageOptions
+const (
+	UP = iota
+	DOWN
+	LEFT
+	RIGHT
+)
 
-	// animation
-	animeTick  int
-	animeState int
+const (
+	V       = 2
+	CWidth  = 32
+	CHeight = 32
+)
+
+type Pacman struct {
+	Animate
 
 	// logical pos
 	lx, ly int
@@ -29,16 +36,20 @@ type Ghost struct {
 	stopLX, stopLY int
 }
 
-func NewGhost(logicalX, logicalY int) *Ghost {
-	cImage := readImage("ghost.png")
+func NewPacman(logicalX, logicalY int) *Pacman {
+	cImage := readImage("assets/pacman.png")
+	img := ebiten.NewImageFromImage(cImage)
 	x, y := logicalX*CWidth, logicalY*CHeight
 
-	return &Ghost{
-		i:  ebiten.NewImageFromImage(cImage),
-		op: &ebiten.DrawImageOptions{},
-
-		animeTick:  0,
-		animeState: 0,
+	return &Pacman{
+		Animate: Animate{
+			imgRef: img,
+			framesInSprites: []image.Rectangle{
+				image.Rect(0, 0, CWidth, CHeight),
+				image.Rect(0, CHeight, CWidth, 2*CHeight),
+			},
+			ticksPerFrame: 5,
+		},
 
 		lx: logicalX,
 		ly: logicalY,
@@ -55,25 +66,14 @@ func NewGhost(logicalX, logicalY int) *Ghost {
 	}
 }
 
-func (p *Ghost) Debug() string {
-	return fmt.Sprintf(
-		"pos=%v, is_moving=%t, stop=%v \n lpos=%v lstop=%v",
-		p.Pos(),
-		p.moving,
-		[]int{p.stopX, p.stopY},
-		[]int{p.lx, p.ly},
-		[]int{p.stopLX, p.stopLY},
-	)
-}
-
-func (p *Ghost) Update(wallTest func(int, int) bool) {
+func (p *Pacman) Update(wallTest func(int, int) bool) {
 	if p.moving {
-		p.animeTick++
+		p.AnimeTick()
 		p.move()
 		return
 	}
 
-	p.animeTick = 0
+	p.AnimeTickReset()
 
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
 		p.dir = LEFT
@@ -104,7 +104,7 @@ func (p *Ghost) Update(wallTest func(int, int) bool) {
 	}
 }
 
-func (p *Ghost) startMoving(dir int) {
+func (p *Pacman) startMoving(dir int) {
 	if p.moving {
 		return
 	}
@@ -127,7 +127,7 @@ func (p *Ghost) startMoving(dir int) {
 	}
 }
 
-func (p *Ghost) move() {
+func (p *Pacman) move() {
 	if !p.moving {
 		return
 	}
@@ -167,38 +167,33 @@ func (p *Ghost) move() {
 	}
 }
 
-func (p *Ghost) Pos() []int {
+func (p *Pacman) Pos() []int {
 	return []int{p.x, p.y}
 }
 
-func (p *Ghost) LogicalPos() (int, int) {
+func (p *Pacman) LogicalPos() (int, int) {
 	return p.lx, p.ly
 }
 
-func (p *Ghost) Draw(screen *ebiten.Image) {
-	p.op.GeoM.Reset()
+func (p *Pacman) Draw(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
 
 	switch p.dir {
 	case UP:
-		p.rotateInPlace(&p.op.GeoM, -90)
+		p.rotateInPlace(&op.GeoM, -90)
 	case LEFT:
-		p.rotateInPlace(&p.op.GeoM, 180)
+		p.rotateInPlace(&op.GeoM, 180)
 	case DOWN:
-		p.rotateInPlace(&p.op.GeoM, 90)
+		p.rotateInPlace(&op.GeoM, 90)
 	default:
-		p.rotateInPlace(&p.op.GeoM, 0)
+		p.rotateInPlace(&op.GeoM, 0)
 	}
-	p.op.GeoM.Translate(float64(p.x), float64(p.y))
+	op.GeoM.Translate(float64(p.x), float64(p.y))
 
-	i := (p.animeTick / 5) % 2
-	sx, sy := 0, i*CHeight
-	screen.DrawImage(
-		p.i.SubImage(image.Rect(sx, sy, sx+CWidth, sy+CHeight)).(*ebiten.Image),
-		p.op,
-	)
+	screen.DrawImage(p.ImageToDraw(), op)
 }
 
-func (p *Ghost) rotateInPlace(geoM *ebiten.GeoM, degree int) *ebiten.GeoM {
+func (p *Pacman) rotateInPlace(geoM *ebiten.GeoM, degree int) *ebiten.GeoM {
 	geoM.Translate(-float64(CWidth)/2, -float64(CHeight)/2)
 	geoM.Rotate(2 * math.Pi * float64(degree) / 360)
 	geoM.Translate(float64(CWidth)/2, float64(CHeight)/2)

@@ -1,8 +1,10 @@
-package main
+package play
 
 import (
 	"fmt"
 	"image/color"
+
+	g "github.com/straightdave/pacman/game"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -15,32 +17,34 @@ type ScenePlay struct {
 	rect   *ebiten.Image
 	dot    *ebiten.Image
 	score  int
-	pacman *Pacman
+	pacman *g.Pacman
 }
 
-func NewScenePlay() *ScenePlay {
-	// init logical pos of pacman
-	lx, ly := 5, 5
-	levelMap1[lx][ly] = 2
+func init() {
+	g.RegisterScene("play", func() (g.Scene, error) {
+		// init logical pos of pacman
+		lx, ly := 5, 5
+		levelMap1[lx][ly] = 2
 
-	s := &ScenePlay{
-		isActive: true,
-		layers:   levelMap1,
-		rect:     ebiten.NewImage(32, 32),
-		dot:      ebiten.NewImage(32, 32),
-		score:    0,
-		pacman:   NewPacman(lx, ly),
-	}
-	s.rect.Fill(color.RGBA{0, 0, 255, 1})
-	s.dot.Fill(color.RGBA{255, 255, 255, 1})
-	return s
+		s := &ScenePlay{
+			isActive: true,
+			layers:   levelMap1,
+			rect:     ebiten.NewImage(32, 32),
+			dot:      ebiten.NewImage(32, 32),
+			score:    0,
+			pacman:   g.NewPacman(lx, ly),
+		}
+		s.rect.Fill(color.RGBA{0, 0, 255, 1})
+		s.dot.Fill(color.RGBA{255, 255, 255, 1})
+		return s, nil
+	})
 }
 
 func (s *ScenePlay) IsActive() bool { return s.isActive }
 func (s *ScenePlay) Activate()      { s.isActive = true }
 func (s *ScenePlay) Deactivate()    { s.isActive = false }
 
-func (s *ScenePlay) Update(ctx *Context) error {
+func (s *ScenePlay) Update(ctx *g.Context) error {
 	if s.score >= 5 {
 		ctx.NextScene = "win"
 		s.Deactivate()
@@ -66,7 +70,7 @@ func (s *ScenePlay) wallTest(lx, ly int) bool {
 	return s.layers[lx][ly] == 1
 }
 
-func (s *ScenePlay) Draw(_ *Context, screen *ebiten.Image) {
+func (s *ScenePlay) Draw(_ *g.Context, screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	for i, r := range s.layers {
 		for j, v := range r {
